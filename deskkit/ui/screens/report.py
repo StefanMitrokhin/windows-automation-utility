@@ -24,6 +24,11 @@ class ReportScreen(customtkinter.CTkFrame):
         self._presenter = presenter
         self._host = host
         self._snapshot: SystemSnapshot | None = None
+        customtkinter.CTkLabel(self, text="Отчёт", font=("Segoe UI", 20)).pack(
+            anchor="w", padx=12, pady=(8, 0)
+        )
+        self._progress = customtkinter.CTkProgressBar(self)
+        self._progress.pack_forget()
         self._output = customtkinter.CTkTextbox(self, height=200)
         self._output.pack(fill="both", expand=True, padx=12, pady=8)
         row = customtkinter.CTkFrame(self)
@@ -50,17 +55,37 @@ class ReportScreen(customtkinter.CTkFrame):
             self._host.notify,
         )
 
+    def on_busy(self, busy: bool) -> None:
+        if busy:
+            self._progress.pack(fill="x", padx=12, pady=4, before=self._output)
+            if hasattr(self._progress, "start"):
+                self._progress.start()
+            else:
+                self._progress.set(0.5)
+        else:
+            if hasattr(self._progress, "stop"):
+                self._progress.stop()
+            self._progress.pack_forget()
+
     def _show(self, snapshot: SystemSnapshot) -> None:
         self._snapshot = snapshot
+        self._output.configure(state="normal")
         self._output.delete("1.0", "end")
         self._output.insert("1.0", self._presenter.summary(snapshot))
+        self._output.configure(state="disabled")
         self._html.configure(state="normal")
         self._xlsx.configure(state="normal")
+
+    def _timestamp(self) -> str:
+        if self._snapshot:
+            return self._snapshot.collected_at.strftime("%Y%m%d-%H%M%S")
+        return "report"
 
     def _save_html(self) -> None:
         if not self._snapshot:
             return
-        path = self._host.pick_save(".html", "DeskKit-report.html")
+        initial = f"DeskKit-report-{self._timestamp()}.html"
+        path = self._host.pick_save(".html", initial)
         if path:
             self._presenter.save_html(self._snapshot, Path(path))
             self._host.notify(f"Сохранено: {path}")
@@ -68,7 +93,8 @@ class ReportScreen(customtkinter.CTkFrame):
     def _save_xlsx(self) -> None:
         if not self._snapshot:
             return
-        path = self._host.pick_save(".xlsx", "DeskKit-report.xlsx")
+        initial = f"DeskKit-report-{self._timestamp()}.xlsx"
+        path = self._host.pick_save(".xlsx", initial)
         if path:
             self._presenter.save_xlsx(self._snapshot, Path(path))
             self._host.notify(f"Сохранено: {path}")

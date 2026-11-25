@@ -30,27 +30,54 @@ from deskkit.ui.screens.logs import LogsScreen
 from deskkit.ui.screens.profile import ProfileScreen
 from deskkit.ui.screens.report import ReportScreen
 from deskkit.ui.screens.startup import StartupScreen
-from deskkit.ui.strings import ADMIN_OFF, ADMIN_ON, APP_TITLE, NAV, VIEW_ONLY
+from deskkit.ui.strings import (
+    ADMIN_OFF,
+    ADMIN_ON,
+    APP_TITLE,
+    BTN_CLOSE_ANYWAY,
+    BTN_STAY,
+    CLOSE_WHILE_BUSY,
+    NAV,
+    VIEW_ONLY,
+)
 from deskkit.ui.widgets import TaskRunner, confirm
 
 
 class ScreenHost(Protocol):
     def show(self, screen_id: str) -> None: ...
+
     def view_only(self) -> bool: ...
+
+    def is_admin(self) -> bool: ...
+
     def run_task(
         self,
         fn: Callable[[], object],
         on_ok: Callable[[object], None],
         on_err: Callable[[BaseException], None],
     ) -> None: ...
+
     def set_busy(self, busy: bool) -> None: ...
+
     def notify(self, text: str) -> None: ...
+
     def ask(self, title: str, body: str) -> bool: ...
+
     def pick_directory(self) -> str | None: ...
+
     def pick_save(self, suffix: str, initial: str) -> str | None: ...
+
     def pick_open(self) -> str | None: ...
+
     def open_folder(self, path: Path) -> None: ...
+
     def request_elevation(self) -> None: ...
+
+    def cancel_token(self) -> CancellationToken: ...
+
+    def stop_task(self) -> None: ...
+
+    def current_screen_id(self) -> str: ...
 
 
 class DeskKitApp(customtkinter.CTk, ScreenHost):
@@ -60,14 +87,18 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
         self._cancel = CancellationToken()
         self._view_only = customtkinter.BooleanVar(value=False)
         self._busy = False
+        self._current = "home"
         self.title(APP_TITLE)
         icon = Path(__file__).resolve().parent.parent / "assets" / "icon.ico"
         if sys.platform == "win32" and icon.is_file():
             self.iconbitmap(default=str(icon))
+        elif sys.platform == "win32" and not icon.is_file():
+            raise FileNotFoundError(icon)
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
         self._sidebar = customtkinter.CTkFrame(self, width=220)
         self._sidebar.grid(row=0, column=0, sticky="nsew")
+        self._sidebar.grid_propagate(False)
         customtkinter.CTkLabel(self._sidebar, text=APP_TITLE, font=("Segoe UI", 20)).pack(
             pady=(12, 0)
         )
@@ -91,9 +122,10 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
         self._status.grid(row=1, column=0, columnspan=2, sticky="ew")
         admin = ADMIN_ON if context.admin.is_admin() else ADMIN_OFF
         customtkinter.CTkLabel(self._status, text=admin).pack(side="left", padx=12)
-        customtkinter.CTkSwitch(self._status, text=VIEW_ONLY, variable=self._view_only).pack(
-            side="left", expand=True
+        view_switch = customtkinter.CTkSwitch(
+            self._status, text=VIEW_ONLY, variable=self._view_only, command=self._on_view_only
         )
+        view_switch.pack(side="left", expand=True)
         self._hint = customtkinter.CTkLabel(self._status, text="")
         self._hint.pack(side="right", padx=12)
         self._runner = TaskRunner(self)
@@ -112,14 +144,32 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.show("home")
 
+    def _on_view_only(self) -> None:
+        self._screens[self._current].refresh()
+
     def show(self, screen_id: str) -> None:
+        self._current = screen_id
         for key, button in self._nav_buttons.items():
             button.configure(fg_color="#1f6aa5" if key == screen_id else None)
         self._screens[screen_id].tkraise()
         self._screens[screen_id].refresh()
 
+    def current_screen_id(self) -> str:
+        return self._current
+
     def view_only(self) -> bool:
         return self._view_only.get()
+
+    def is_admin(self) -> bool:
+        return self._context.admin.is_admin()
+
+    def cancel_token(self) -> CancellationToken:
+        return self._cancel
+
+    def stop_task(self) -> None:
+        self._cancel.cancel()
+        self._context.runner.terminate()
+        self._cancel = CancellationToken()
 
     def run_task(
         self,
@@ -127,10 +177,14 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
         on_ok: Callable[[object], None],
         on_err: Callable[[BaseException], None],
     ) -> None:
+        self._cancel = CancellationToken()
         self._runner.run_task(fn, on_ok, on_err)
 
     def set_busy(self, busy: bool) -> None:
         self._busy = busy
+        screen = self._screens.get(self._current)
+        if hasattr(screen, "on_busy"):
+            screen.on_busy(busy)
 
     def notify(self, text: str) -> None:
         self._hint.configure(text=text)
@@ -139,16 +193,22 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
         return confirm(self, title, body)
 
     def pick_directory(self) -> str | None:
-        return filedialog.askdirectory()
+        path = filedialog.askdirectory()
+        return path or None
 
     def pick_save(self, suffix: str, initial: str) -> str | None:
-        return filedialog.asksaveasfilename(defaultextension=suffix, initialfile=initial)
+        path = filedialog.asksaveasfilename(defaultextension=suffix, initialfile=initial)
+        return path or None
 
     def pick_open(self) -> str | None:
-        return filedialog.askopenfilename()
+        path = filedialog.askopenfilename()
+        return path or None
 
     def open_folder(self, path: Path) -> None:
-        self._context.open_folder(path)
+        try:
+            self._context.open_folder(path)
+        except OSError as exc:
+            self.notify(str(exc))
 
     def request_elevation(self) -> None:
         result = self._context.admin.relaunch_elevated([])
@@ -159,7 +219,13 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
 
     def _on_close(self) -> None:
         if self._busy:
-            if confirm(self, APP_TITLE, "Сейчас выполняется операция. Остановить и закрыть?"):
+            if confirm(
+                self,
+                APP_TITLE,
+                CLOSE_WHILE_BUSY,
+                no_text=BTN_STAY,
+                yes_text=BTN_CLOSE_ANYWAY,
+            ):
                 self._cancel.cancel()
                 self._context.runner.terminate()
                 self.destroy()

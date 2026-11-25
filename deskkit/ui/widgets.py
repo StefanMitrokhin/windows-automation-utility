@@ -6,8 +6,17 @@ from collections.abc import Callable
 
 import customtkinter
 
+from deskkit.ui.strings import BTN_ABORT, BTN_CONFIRM
 
-def confirm(parent: customtkinter.CTk, title: str, body: str) -> bool:
+
+def confirm(
+    parent: customtkinter.CTk,
+    title: str,
+    body: str,
+    *,
+    no_text: str = BTN_ABORT,
+    yes_text: str = BTN_CONFIRM,
+) -> bool:
     result = {"value": False}
     dialog = customtkinter.CTkToplevel(parent)
     dialog.title(title)
@@ -29,8 +38,8 @@ def confirm(parent: customtkinter.CTk, title: str, body: str) -> bool:
         result["value"] = True
         dialog.destroy()
 
-    no_btn = customtkinter.CTkButton(button_row, text="Отмена", command=on_no)
-    yes_btn = customtkinter.CTkButton(button_row, text="Выполнить", command=on_yes)
+    no_btn = customtkinter.CTkButton(button_row, text=no_text, command=on_no)
+    yes_btn = customtkinter.CTkButton(button_row, text=yes_text, command=on_yes)
     no_btn.pack(side="right", padx=6)
     yes_btn.pack(side="right", padx=6)
     dialog.protocol("WM_DELETE_WINDOW", on_no)
@@ -69,9 +78,13 @@ class TaskRunner:
             try:
                 value = fn()
             except BaseException as exc:
-                self._host.after(100, lambda e=exc: self._finish_err(e, on_err))  # type: ignore[attr-defined]
+                self._host.after(  # type: ignore[attr-defined]
+                    100, lambda e=exc: self._finish_err(e, on_err)
+                )
                 return
-            self._host.after(100, lambda: self._finish_ok(value, on_ok))  # type: ignore[attr-defined]
+            self._host.after(  # type: ignore[attr-defined]
+                100, lambda: self._finish_ok(value, on_ok)
+            )
 
         threading.Thread(target=worker, daemon=True).start()
 
