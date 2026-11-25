@@ -8,6 +8,7 @@ from deskkit.cancel import CancellationToken
 from deskkit.models import InstallReport, InstallScope, InstallStatus
 from deskkit.text import install_preview_text, install_report_text
 from deskkit.ui.presenters import InstallPresenter, can_execute
+from deskkit.ui.screen_state import launch_control_state
 from deskkit.ui.strings import (
     BTN_CANCEL_ACTION,
     BTN_ELEVATE,
@@ -161,13 +162,15 @@ class InstallScreen(customtkinter.CTkFrame):
                 self._progress.start()
             else:
                 self._progress.set(0.5)
-            self._execute_btn.configure(state="disabled")
         else:
             if hasattr(self._progress, "stop"):
                 self._progress.stop()
             self._progress.pack_forget()
-            execute_state = "disabled" if self._host.view_only() else "normal"
-            self._execute_btn.configure(state=execute_state)
+
+    def sync_launch_control(self) -> None:
+        self._execute_btn.configure(
+            state=launch_control_state(view_only=self._host.view_only(), busy=self._host.is_busy())
+        )
 
     def _set_output(self, text: str) -> None:
         self._output.configure(state="normal")
@@ -176,5 +179,4 @@ class InstallScreen(customtkinter.CTkFrame):
         self._output.configure(state="disabled")
 
     def refresh(self) -> None:
-        execute_state = "disabled" if self._host.view_only() else "normal"
-        self._execute_btn.configure(state=execute_state)
+        self.sync_launch_control()

@@ -9,6 +9,7 @@ from deskkit.errors import ValidationError
 from deskkit.models import CleanupResult, CleanupTargetId
 from deskkit.text import cleanup_preview_text, cleanup_result_text, cleanup_target_label
 from deskkit.ui.presenters import CleanupPresenter, can_execute
+from deskkit.ui.screen_state import launch_control_state
 from deskkit.ui.strings import (
     BTN_CANCEL_ACTION,
     BTN_ELEVATE,
@@ -132,13 +133,15 @@ class CleanupScreen(customtkinter.CTkFrame):
                 self._progress.start()
             else:
                 self._progress.set(0.5)
-            self._execute_btn.configure(state="disabled")
         else:
             if hasattr(self._progress, "stop"):
                 self._progress.stop()
             self._progress.pack_forget()
-            execute_state = "disabled" if self._host.view_only() else "normal"
-            self._execute_btn.configure(state=execute_state)
+
+    def sync_launch_control(self) -> None:
+        self._execute_btn.configure(
+            state=launch_control_state(view_only=self._host.view_only(), busy=self._host.is_busy())
+        )
 
     def _set(self, text: str) -> None:
         self._output.configure(state="normal")
@@ -152,5 +155,4 @@ class CleanupScreen(customtkinter.CTkFrame):
             for target, var in self._vars.items():
                 var.set(target in profile.cleanup.targets)
             self._targets_seeded = True
-        execute_state = "disabled" if self._host.view_only() else "normal"
-        self._execute_btn.configure(state=execute_state)
+        self.sync_launch_control()

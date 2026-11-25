@@ -11,6 +11,7 @@ from deskkit.errors import DeskKitError, ValidationError
 from deskkit.models import BackupResult, BackupSettings, ScheduleSettings, ScheduleStatus
 from deskkit.text import backup_preview_text, backup_result_text
 from deskkit.ui.presenters import BackupPresenter, can_execute
+from deskkit.ui.screen_state import launch_control_state
 from deskkit.ui.strings import (
     BACKUP_PLAIN_HINT,
     BTN_ADD_FOLDER,
@@ -296,13 +297,15 @@ class BackupScreen(customtkinter.CTkFrame):
                 self._progress.start()
             else:
                 self._progress.set(0.5)
-            self._run_btn.configure(state="disabled")
         else:
             if hasattr(self._progress, "stop"):
                 self._progress.stop()
             self._progress.pack_forget()
-            execute_state = "disabled" if self._host.view_only() else "normal"
-            self._run_btn.configure(state=execute_state)
+
+    def sync_launch_control(self) -> None:
+        self._run_btn.configure(
+            state=launch_control_state(view_only=self._host.view_only(), busy=self._host.is_busy())
+        )
 
     def _set_output(self, text: str) -> None:
         self._output.configure(state="normal")
@@ -333,5 +336,4 @@ class BackupScreen(customtkinter.CTkFrame):
         if not self._schedule_status_loaded:
             self._update_schedule_status()
             self._schedule_status_loaded = True
-        execute_state = "disabled" if self._host.view_only() else "normal"
-        self._run_btn.configure(state=execute_state)
+        self.sync_launch_control()

@@ -127,6 +127,30 @@ def test_strings_nav_complete() -> None:
     assert all(NAV.values())
 
 
+def test_launch_control_state_table() -> None:
+    from deskkit.ui.screen_state import launch_control_state
+
+    assert launch_control_state(view_only=False, busy=False) == "normal"
+    assert launch_control_state(view_only=True, busy=False) == "disabled"
+    assert launch_control_state(view_only=False, busy=True) == "disabled"
+    assert launch_control_state(view_only=True, busy=True) == "disabled"
+
+
+def test_launch_control_busy_survives_show_and_view_only_toggle() -> None:
+    from deskkit.ui.screen_state import LaunchControlSession
+
+    session = LaunchControlSession(view_only=False, busy=True)
+    assert session.on_show() == "disabled"
+    assert session.on_view_only_change(True) == "disabled"
+    assert session.on_view_only_change(False) == "disabled"
+    assert session.on_busy_change(False) == "normal"
+    assert session.on_view_only_change(True) == "disabled"
+    session.view_only = False
+    session.busy = True
+    assert session.on_show() == "disabled"
+    assert session.on_busy_change(False) == "normal"
+
+
 def test_run_task_stop_keeps_same_cancellation_token() -> None:
     """TaskDispatch (как DeskKitApp.run_task): stop отменяет токен задачи."""
     import threading

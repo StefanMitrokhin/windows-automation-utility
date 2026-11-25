@@ -49,6 +49,8 @@ class ScreenHost(Protocol):
 
     def view_only(self) -> bool: ...
 
+    def is_busy(self) -> bool: ...
+
     def is_admin(self) -> bool: ...
 
     def run_task(
@@ -161,6 +163,9 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
     def view_only(self) -> bool:
         return self._view_only.get()
 
+    def is_busy(self) -> bool:
+        return self._busy
+
     def is_admin(self) -> bool:
         return self._context.admin.is_admin()
 
@@ -180,9 +185,12 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
 
     def set_busy(self, busy: bool) -> None:
         self._busy = busy
-        screen = self._screens.get(self._current)
-        if hasattr(screen, "on_busy"):
-            screen.on_busy(busy)
+        current = self._screens.get(self._current)
+        if current is not None and hasattr(current, "on_busy"):
+            current.on_busy(busy)
+        for screen in self._screens.values():
+            if hasattr(screen, "sync_launch_control"):
+                screen.sync_launch_control()
 
     def notify(self, text: str) -> None:
         self._hint.configure(text=text)

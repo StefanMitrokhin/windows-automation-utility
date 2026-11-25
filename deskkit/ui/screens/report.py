@@ -8,6 +8,7 @@ import customtkinter
 from deskkit.cancel import CancellationToken
 from deskkit.models import SystemSnapshot
 from deskkit.ui.presenters import ReportPresenter
+from deskkit.ui.screen_state import launch_control_state
 from deskkit.ui.strings import BTN_COLLECT, BTN_SAVE_HTML, BTN_SAVE_XLSX
 
 if TYPE_CHECKING:
@@ -62,12 +63,15 @@ class ReportScreen(customtkinter.CTkFrame):
                 self._progress.start()
             else:
                 self._progress.set(0.5)
-            self._collect_btn.configure(state="disabled")
         else:
             if hasattr(self._progress, "stop"):
                 self._progress.stop()
             self._progress.pack_forget()
-            self._collect_btn.configure(state="normal")
+
+    def sync_launch_control(self) -> None:
+        self._collect_btn.configure(
+            state=launch_control_state(view_only=self._host.view_only(), busy=self._host.is_busy())
+        )
 
     def _show(self, snapshot: SystemSnapshot) -> None:
         self._snapshot = snapshot
@@ -102,4 +106,4 @@ class ReportScreen(customtkinter.CTkFrame):
             self._host.notify(f"Сохранено: {path}")
 
     def refresh(self) -> None:
-        pass
+        self.sync_launch_control()

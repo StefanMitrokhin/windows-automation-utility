@@ -10,6 +10,7 @@ from deskkit.errors import DeskKitError, ValidationError
 from deskkit.models import InstallReport, InstallStatus
 from deskkit.text import install_preview_text, install_report_text, profile_summary_text
 from deskkit.ui.presenters import ProfilePresenter, can_execute
+from deskkit.ui.screen_state import launch_control_state
 from deskkit.ui.strings import (
     BTN_APPLY_INSTALL,
     BTN_PROFILE_EXPORT,
@@ -129,12 +130,10 @@ class ProfileScreen(customtkinter.CTkFrame):
 
         self._host.run_task(task, done, self._host.notify)
 
-    def on_busy(self, busy: bool) -> None:
-        if busy:
-            self._apply_btn.configure(state="disabled")
-        else:
-            apply_state = "disabled" if self._host.view_only() else "normal"
-            self._apply_btn.configure(state=apply_state)
+    def sync_launch_control(self) -> None:
+        self._apply_btn.configure(
+            state=launch_control_state(view_only=self._host.view_only(), busy=self._host.is_busy())
+        )
 
     def refresh(self) -> None:
         self._path.configure(state="normal")
@@ -145,5 +144,4 @@ class ProfileScreen(customtkinter.CTkFrame):
         self._text.delete("1.0", "end")
         self._text.insert("1.0", self._presenter.text())
         self._text.configure(state="disabled")
-        apply_state = "disabled" if self._host.view_only() else "normal"
-        self._apply_btn.configure(state=apply_state)
+        self.sync_launch_control()
