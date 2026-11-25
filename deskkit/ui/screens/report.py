@@ -1,18 +1,29 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import customtkinter
 
+from deskkit.models import SystemSnapshot
+from deskkit.ui.presenters import ReportPresenter
 from deskkit.ui.strings import BTN_COLLECT, BTN_SAVE_HTML, BTN_SAVE_XLSX
+
+if TYPE_CHECKING:
+    from deskkit.ui.app import ScreenHost
 
 
 class ReportScreen(customtkinter.CTkFrame):
-    def __init__(self, parent, presenter, host) -> None:
+    def __init__(
+        self,
+        parent: customtkinter.CTkFrame | customtkinter.CTk,
+        presenter: ReportPresenter,
+        host: ScreenHost,
+    ) -> None:
         super().__init__(parent)
         self._presenter = presenter
         self._host = host
-        self._snapshot = None
+        self._snapshot: SystemSnapshot | None = None
         self._output = customtkinter.CTkTextbox(self, height=200)
         self._output.pack(fill="both", expand=True, padx=12, pady=8)
         row = customtkinter.CTkFrame(self)
@@ -30,7 +41,7 @@ class ReportScreen(customtkinter.CTkFrame):
         self._xlsx.pack(side="left", padx=4)
 
     def _collect(self) -> None:
-        def task():
+        def task() -> SystemSnapshot:
             return self._presenter.collect()
 
         self._host.run_task(
@@ -39,7 +50,7 @@ class ReportScreen(customtkinter.CTkFrame):
             self._host.notify,
         )
 
-    def _show(self, snapshot) -> None:
+    def _show(self, snapshot: SystemSnapshot) -> None:
         self._snapshot = snapshot
         self._output.delete("1.0", "end")
         self._output.insert("1.0", self._presenter.summary(snapshot))

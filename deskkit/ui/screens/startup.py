@@ -1,12 +1,24 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import customtkinter
 
+from deskkit.models import StartupEntry
+from deskkit.ui.presenters import StartupPresenter
 from deskkit.ui.strings import BTN_ELEVATE, ELEVATE_HINT
+
+if TYPE_CHECKING:
+    from deskkit.ui.app import ScreenHost
 
 
 class StartupScreen(customtkinter.CTkFrame):
-    def __init__(self, parent, presenter, host) -> None:
+    def __init__(
+        self,
+        parent: customtkinter.CTkFrame | customtkinter.CTk,
+        presenter: StartupPresenter,
+        host: ScreenHost,
+    ) -> None:
         super().__init__(parent)
         self._presenter = presenter
         self._host = host
@@ -35,7 +47,7 @@ class StartupScreen(customtkinter.CTkFrame):
                 command=lambda e=entry: self._toggle(e),
             ).pack(side="right")
 
-    def _toggle(self, entry) -> None:
+    def _toggle(self, entry: StartupEntry) -> None:
         action = "enable" if not entry.enabled else "disable"
         if not self._host.ask("Подтверждение", self._presenter.confirmation(entry, action)):
             return

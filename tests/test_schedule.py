@@ -115,9 +115,20 @@ def test_empty_stdout_warning() -> None:
     assert status.warning == "Пустой ответ планировщика."
 
 
-def test_argv_has_no_ru_or_system() -> None:
+def test_argv_has_no_ru_or_system(context) -> None:
     argv = ScheduleService(FakeRunner(), ["deskkit-cli"]).create_argv(
         ScheduleSettings(True, "weekly", "MON", "09:00")
     )
     joined = " ".join(argv)
     assert "/RU" not in joined and "SYSTEM" not in joined
+
+    from deskkit.ui.presenters import BackupPresenter
+
+    bp = BackupPresenter(context)
+    enabled = ScheduleSettings(True, "weekly", "MON", "09:00")
+    assert bp.schedule_text(enabled)
+    context.runner.enqueue(CommandResult((), 1, "", "", False, False))
+    context.runner.enqueue(CommandResult((), 1, "", "", False, False))
+    context.runner.enqueue(CommandResult((), 1, "", "", False, False))
+    context.runner.enqueue(CommandResult((), 1, "", "", False, False))
+    bp.save_schedule(ScheduleSettings(False, "weekly", "MON", "09:00"), confirmed=True)

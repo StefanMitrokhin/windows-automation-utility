@@ -204,9 +204,6 @@ class BackupPresenter:
     def remove_schedule(self, *, confirmed: bool) -> None:
         self._context.schedule.remove(confirmed=confirmed)
 
-    def profile_backup(self):
-        return self._context.profile_store.load().backup
-
 
 class ProfilePresenter:
     def __init__(self, context: Context) -> None:

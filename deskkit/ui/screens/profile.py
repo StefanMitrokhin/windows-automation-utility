@@ -1,12 +1,23 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import customtkinter
 
+from deskkit.ui.presenters import ProfilePresenter
 from deskkit.ui.strings import BTN_APPLY_INSTALL, BTN_PROFILE_INIT, PROFILE_HINT
+
+if TYPE_CHECKING:
+    from deskkit.ui.app import ScreenHost
 
 
 class ProfileScreen(customtkinter.CTkFrame):
-    def __init__(self, parent, presenter, host) -> None:
+    def __init__(
+        self,
+        parent: customtkinter.CTkFrame | customtkinter.CTk,
+        presenter: ProfilePresenter,
+        host: ScreenHost,
+    ) -> None:
         super().__init__(parent)
         self._presenter = presenter
         self._host = host

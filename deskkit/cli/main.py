@@ -3,7 +3,9 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
+from typing import TypeVar
 
 from deskkit.app_context import Context, build_context
 from deskkit.cancel import CancellationToken
@@ -438,15 +440,18 @@ def _cmd_profile(args: argparse.Namespace, context: Context, cancel: Cancellatio
     )
 
 
+_T = TypeVar("_T")
+
+
 def _mutating(
     *,
-    preview_fn,
+    preview_fn: Callable[[], str],
     dry_run: bool,
     yes: bool,
-    execute,
-    dry_execute,
-    on_success,
-    exit_from_result,
+    execute: Callable[[], _T],
+    dry_execute: Callable[[], _T],
+    on_success: Callable[[_T], None],
+    exit_from_result: Callable[[_T], int],
 ) -> int:
     if dry_run:
         result = dry_execute()

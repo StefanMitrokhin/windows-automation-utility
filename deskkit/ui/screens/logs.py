@@ -1,12 +1,23 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import customtkinter
 
+from deskkit.ui.presenters import LogsPresenter
 from deskkit.ui.strings import BTN_OPEN_LOG_DIR, BTN_REFRESH
+
+if TYPE_CHECKING:
+    from deskkit.ui.app import ScreenHost
 
 
 class LogsScreen(customtkinter.CTkFrame):
-    def __init__(self, parent, presenter, host) -> None:
+    def __init__(
+        self,
+        parent: customtkinter.CTkFrame | customtkinter.CTk,
+        presenter: LogsPresenter,
+        host: ScreenHost,
+    ) -> None:
         super().__init__(parent)
         self._presenter = presenter
         self._host = host

@@ -1,15 +1,25 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import customtkinter
 
-from deskkit.models import InstallScope
+from deskkit.models import InstallReport, InstallScope
 from deskkit.text import install_preview_text, install_report_text
-from deskkit.ui.presenters import can_execute
+from deskkit.ui.presenters import InstallPresenter, can_execute
 from deskkit.ui.strings import BTN_CANCEL_ACTION, BTN_EXECUTE, BTN_PREVIEW, EMPTY_SELECTION
+
+if TYPE_CHECKING:
+    from deskkit.ui.app import ScreenHost
 
 
 class InstallScreen(customtkinter.CTkFrame):
-    def __init__(self, parent, presenter, host) -> None:
+    def __init__(
+        self,
+        parent: customtkinter.CTkFrame | customtkinter.CTk,
+        presenter: InstallPresenter,
+        host: ScreenHost,
+    ) -> None:
         super().__init__(parent)
         self._presenter = presenter
         self._host = host
@@ -66,7 +76,7 @@ class InstallScreen(customtkinter.CTkFrame):
 
         token = CancellationToken()
 
-        def task():
+        def task() -> InstallReport:
             return self._presenter.execute(ids, scope, dry_run=False, confirmed=True, cancel=token)
 
         self._host.run_task(

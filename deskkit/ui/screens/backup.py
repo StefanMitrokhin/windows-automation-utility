@@ -1,12 +1,23 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import customtkinter
 
+from deskkit.ui.presenters import BackupPresenter
 from deskkit.ui.strings import BTN_BACKUP_NOW, BTN_PREVIEW
+
+if TYPE_CHECKING:
+    from deskkit.ui.app import ScreenHost
 
 
 class BackupScreen(customtkinter.CTkFrame):
-    def __init__(self, parent, presenter, host) -> None:
+    def __init__(
+        self,
+        parent: customtkinter.CTkFrame | customtkinter.CTk,
+        presenter: BackupPresenter,
+        host: ScreenHost,
+    ) -> None:
         super().__init__(parent)
         self._presenter = presenter
         self._host = host
@@ -33,7 +44,7 @@ class BackupScreen(customtkinter.CTkFrame):
         pass
 
     def refresh(self) -> None:
-        backup = self._presenter.profile_backup()
+        backup = self._presenter._context.profile_store.load().backup
         self._sources = list(backup.sources)
         if backup.destination:
             self._dest.delete(0, "end")

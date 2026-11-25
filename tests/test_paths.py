@@ -24,6 +24,7 @@ def test_log_path_uses_localappdata() -> None:
     env = {"LOCALAPPDATA": r"C:\Users\A\AppData\Local"}
     path = log_path_from_env(env, Path("/home"))
     assert path.parts[-3:] == ("DeskKit", "logs", "deskkit.log")
+    assert log_path_from_env({}, Path("/home")) == Path("/home/.deskkit/logs/deskkit.log")
 
 
 def test_cleanup_roots_from_env() -> None:
@@ -36,6 +37,8 @@ def test_cleanup_roots_from_env() -> None:
     assert str(roots.user_temp).replace("\\", "/").endswith("C:/Temp")
     assert "Windows" in str(roots.windows_temp) and str(roots.windows_temp).endswith("Temp")
     assert roots.chrome_user_data.parts[-3:] == ("Google", "Chrome", "User Data")
+    roots_fb = cleanup_roots_from_env({}, Path("/home"))
+    assert str(roots_fb.user_temp).endswith("Temp")
 
 
 def test_startup_folders() -> None:
@@ -46,3 +49,5 @@ def test_startup_folders() -> None:
     user, common = startup_folders_from_env(env, Path("/home"))
     assert "Start Menu" in str(user) and str(user).endswith("Startup")
     assert "Start Menu" in str(common) and str(common).endswith("Startup")
+    user_fb, _ = startup_folders_from_env({}, Path("/home"))
+    assert "Start Menu" in str(user_fb) and str(user_fb).endswith("Startup")

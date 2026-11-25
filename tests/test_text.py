@@ -3,7 +3,10 @@ from __future__ import annotations
 import pytest
 
 from deskkit.models import (
+    BackupPreview,
+    BackupResult,
     CleanupPreview,
+    CleanupResult,
     CleanupTargetId,
     CleanupTargetPreview,
     InstallItemResult,
@@ -11,6 +14,8 @@ from deskkit.models import (
     InstallReport,
     InstallScope,
     InstallStatus,
+    StartupEntry,
+    StartupSource,
 )
 from deskkit.text import (
     cleanup_preview_text,
@@ -104,5 +109,55 @@ def test_install_report_text_exact() -> None:
 
 
 def test_scope_labels() -> None:
+    from deskkit.text import (
+        backup_preview_text,
+        backup_result_text,
+        cleanup_result_text,
+        output_tail,
+        schedule_preview_text,
+        startup_action_text,
+        startup_list_text,
+        startup_source_label,
+    )
+
     assert install_scope_label(InstallScope.USER) == "для текущего пользователя"
     assert install_scope_label(InstallScope.AUTO) == "как решит winget"
+    entry = StartupEntry("hkcu|A", StartupSource.HKCU_RUN, "A", "cmd", True, False)
+    assert startup_source_label(StartupSource.HKCU_RUN)
+    assert startup_list_text((entry,))
+    assert startup_action_text(entry, "disable")
+    bprev = BackupPreview(
+        sources=("/src",),
+        destination="/dest",
+        file_count=1,
+        byte_count=2,
+        archive_name="arch.zip",
+        rotate_names=(),
+        skipped=(),
+        warnings=(),
+    )
+    assert backup_preview_text(bprev, include_footer=True)
+    assert backup_result_text(
+        BackupResult(
+            preview=bprev,
+            archive_path="/dest/arch.zip",
+            written_files=1,
+            skipped=(),
+            dry_run=False,
+            cancelled=False,
+        )
+    )
+    assert schedule_preview_text(["deskkit-cli", "backup", "run", "--yes"])
+    cprev = CleanupPreview(targets=())
+    assert cleanup_result_text(
+        CleanupResult(
+            preview=cprev,
+            deleted_files=0,
+            freed_bytes=0,
+            skipped_locked=0,
+            errors=(),
+            dry_run=False,
+            cancelled=False,
+        )
+    )
+    assert output_tail("line\n", "err\n", lines=1)

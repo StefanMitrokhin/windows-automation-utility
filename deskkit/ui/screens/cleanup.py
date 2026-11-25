@@ -1,14 +1,25 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import customtkinter
 
-from deskkit.models import CleanupTargetId
+from deskkit.models import CleanupResult, CleanupTargetId
 from deskkit.text import cleanup_preview_text, cleanup_result_text, cleanup_target_label
+from deskkit.ui.presenters import CleanupPresenter
 from deskkit.ui.strings import BTN_EXECUTE, BTN_PREVIEW
+
+if TYPE_CHECKING:
+    from deskkit.ui.app import ScreenHost
 
 
 class CleanupScreen(customtkinter.CTkFrame):
-    def __init__(self, parent, presenter, host) -> None:
+    def __init__(
+        self,
+        parent: customtkinter.CTkFrame | customtkinter.CTk,
+        presenter: CleanupPresenter,
+        host: ScreenHost,
+    ) -> None:
         super().__init__(parent)
         self._presenter = presenter
         self._host = host
@@ -39,7 +50,7 @@ class CleanupScreen(customtkinter.CTkFrame):
 
         token = CancellationToken()
 
-        def task():
+        def task() -> CleanupResult:
             return self._presenter.execute(
                 self._targets(), dry_run=False, confirmed=True, cancel=token
             )

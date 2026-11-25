@@ -6,7 +6,7 @@ from pathlib import Path
 from deskkit.logging_setup import read_log_tail, setup_logging
 
 
-def test_creates_file(tmp_path: Path) -> None:
+def test_creates_file(context, tmp_path: Path) -> None:
     log_path = tmp_path / "deskkit.log"
     logger = setup_logging(log_path, verbose=False)
     logger.info("проверка")
@@ -14,12 +14,20 @@ def test_creates_file(tmp_path: Path) -> None:
         handler.flush()
     assert "проверка" in log_path.read_text(encoding="utf-8")
 
+    from deskkit.ui.presenters import LogsPresenter
+
+    lp = LogsPresenter(context)
+    assert lp.directory() == context.paths.log_dir
+    assert lp.text()
+
 
 def test_rotation_settings(tmp_path: Path) -> None:
     logger = setup_logging(tmp_path / "log", verbose=False)
     handler = next(h for h in logger.handlers if isinstance(h, RotatingFileHandler))
     assert handler.maxBytes == 1_000_000
     assert handler.backupCount == 5
+    duplicate = setup_logging(tmp_path / "log", verbose=True)
+    assert duplicate is logger
 
 
 def test_missing_tail(tmp_path: Path) -> None:

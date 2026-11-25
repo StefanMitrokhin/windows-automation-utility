@@ -176,7 +176,7 @@ def test_cancel_before_second_file(context, tmp_path: Path) -> None:
     assert not (temp / "b.bin").exists()
 
 
-def test_recycle_only_when_selected(context) -> None:
+def test_recycle_only_when_selected(context, tmp_path: Path) -> None:
     context.cleanup.apply(
         [CleanupTargetId.USER_TEMP], dry_run=False, confirmed=True, cancel=CancellationToken()
     )
@@ -185,6 +185,20 @@ def test_recycle_only_when_selected(context) -> None:
         [CleanupTargetId.RECYCLE_BIN], dry_run=False, confirmed=True, cancel=CancellationToken()
     )
     assert len(context.cleanup._recycle.emptied) == 1
+    win = tmp_path / "Windows" / "Temp"
+    win.mkdir(parents=True)
+    (win / "old.bin").write_bytes(b"x")
+    import os
+
+    os.utime(win / "old.bin", (0, 0))
+    preview = context.cleanup.preview([CleanupTargetId.WINDOWS_TEMP])
+    context.cleanup.apply(
+        [CleanupTargetId.WINDOWS_TEMP],
+        dry_run=False,
+        confirmed=True,
+        cancel=CancellationToken(),
+    )
+    assert preview.total_files >= 1
 
 
 def test_recycle_error_is_warning(context) -> None:
@@ -193,6 +207,19 @@ def test_recycle_error_is_warning(context) -> None:
     assert preview.targets[0].warnings
 
 
-def test_empty_targets(context) -> None:
+def test_empty_targets(context, tmp_path: Path) -> None:
     with pytest.raises(ValidationError):
         context.cleanup.preview(())
+
+    from deskkit.cancel import CancellationToken
+    from deskkit.ui.presenters import CleanupPresenter
+
+    cp = CleanupPresenter(context)
+    preview = cp.preview([CleanupTargetId.USER_TEMP])
+    cp.confirmation(preview)
+    cp.execute(
+        [CleanupTargetId.USER_TEMP],
+        dry_run=True,
+        confirmed=False,
+        cancel=CancellationToken(),
+    )

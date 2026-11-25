@@ -15,6 +15,7 @@ keywords = ["windows", "winget", "desktop", "automation"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Win32 (MS Windows)",
+  "License :: OSI Approved :: MIT License",
   "Operating System :: Microsoft :: Windows :: Windows 10",
   "Operating System :: Microsoft :: Windows :: Windows 11",
   "Programming Language :: Python :: 3.11",
@@ -57,16 +58,15 @@ extend-exclude = [
   "installer/deskkit-cli.spec",
   "build",
   "dist",
+  "docs/PLAN.md",
 ]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "RUF"]
-ignore = []
+ignore = ["RUF001"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["ANN", "E501", "F401", "SIM", "RUF059", "RUF001", "B017", "F841"]
-"deskkit/**" = ["RUF001", "ANN", "E501"]
-"deskkit/text.py" = ["RUF001", "ANN", "E501"]
+"tests/**" = ["ANN"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["deskkit"]
@@ -79,19 +79,14 @@ addopts = "-q --strict-markers --cov=deskkit --cov-report=term-missing --cov-fai
 branch = true
 source = ["deskkit"]
 omit = [
-  "deskkit/app_context.py",
-  "deskkit/__main__.py",
-  "deskkit/platform/protocols.py",
   "deskkit/ui/app.py",
   "deskkit/ui/widgets.py",
   "deskkit/ui/theme.py",
   "deskkit/ui/screens/*",
-  "deskkit/ui/presenters.py",
   "deskkit/entry_gui.py",
   "deskkit/entry_cli.py",
   "deskkit/platform/windows.py",
   "deskkit/platform/system_probe.py",
-  "deskkit/services/schedule.py",
 ]
 
 [tool.coverage.report]

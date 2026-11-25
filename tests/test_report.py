@@ -71,5 +71,12 @@ def test_xlsx_disk_bytes(tmp_path) -> None:
     assert format_bytes(1024) in values
 
 
-def test_summary_contains_hostname() -> None:
+def test_summary_contains_hostname(context, tmp_path) -> None:
+    from deskkit.ui.presenters import ReportPresenter
+
+    presenter = ReportPresenter(context)
+    snap = presenter.collect()
     assert "OFFICE-PC" in report_summary_text(_snapshot())
+    assert "OFFICE-PC" in presenter.summary(snap)
+    presenter.save_html(snap, tmp_path / "r.html")
+    presenter.save_xlsx(snap, tmp_path / "r.xlsx")

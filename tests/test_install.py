@@ -140,7 +140,7 @@ def test_cancel_between_packages() -> None:
     assert len(runner.calls) == 1
 
 
-def test_winget_missing() -> None:
+def test_winget_missing(context) -> None:
     svc, _ = _service(winget=None)
     with pytest.raises(WingetNotFoundError) as exc:
         svc.apply(
@@ -151,6 +151,13 @@ def test_winget_missing() -> None:
             cancel=CancellationToken(),
         )
     assert str(exc.value).startswith("Не найден winget.")
+
+    from dataclasses import replace
+
+    from deskkit.cli.main import run
+
+    ctx = replace(context, installer=svc)
+    assert run(["install", "run", "--id", "7zip.7zip", "--yes"], context=ctx) == 1
 
 
 def test_order_preserved() -> None:

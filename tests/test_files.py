@@ -59,7 +59,9 @@ def test_zip_cleans_partial_on_bad_arcname(tmp_path: Path) -> None:
     src = tmp_path / "a.txt"
     src.write_text("x", encoding="utf-8")
     archive = tmp_path / "out.zip"
-    with pytest.raises(Exception):
+    from deskkit.errors import PathNotAllowedError
+
+    with pytest.raises(PathNotAllowedError):
         ops.create_zip(
             archive,
             [ZipMember(src, "../x", 1)],

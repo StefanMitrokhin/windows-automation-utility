@@ -185,7 +185,11 @@ def test_too_many_sources(tmp_path: Path) -> None:
     assert str(exc.value) == "Можно выбрать не больше 20 папок."
 
 
-def test_cancel_during_walk(tmp_path: Path) -> None:
+def test_cancel_during_walk(context, tmp_path: Path) -> None:
+    from deskkit.cancel import CancellationToken
+    from deskkit.models import CommandResult, ScheduleSettings
+    from deskkit.ui.presenters import BackupPresenter
+
     src = tmp_path / "src"
     src.mkdir()
     (src / "a").write_bytes(b"a")
@@ -196,3 +200,28 @@ def test_cancel_during_walk(tmp_path: Path) -> None:
     )
     assert result.cancelled
     assert not list((tmp_path / "dest").glob("*.zip")) if (tmp_path / "dest").exists() else True
+
+    bp = BackupPresenter(context)
+    bprev = bp.preview([src], tmp_path / "dest2", 5)
+    bp.confirmation(bprev)
+    bp.execute(
+        [src],
+        tmp_path / "dest2",
+        5,
+        dry_run=True,
+        confirmed=False,
+        cancel=token,
+    )
+    context.runner.enqueue(CommandResult((), 1, "", "", False, False))
+    context.runner.enqueue(CommandResult((), 1, "", "", False, False))
+    bp.schedule_status()
+    sched = ScheduleSettings(True, "weekly", "MON", "09:00")
+    bp.schedule_text(sched)
+    context.runner.enqueue(CommandResult((), 0, "", "", False, False))
+    context.runner.enqueue(CommandResult((), 1, "", "", False, False))
+    context.runner.enqueue(CommandResult((), 1, "", "", False, False))
+    bp.remove_schedule(confirmed=True)
+    context.runner.enqueue(CommandResult((), 0, "", "", False, False))
+    context.runner.enqueue(CommandResult((), 1, "", "", False, False))
+    context.runner.enqueue(CommandResult((), 1, "", "", False, False))
+    bp.save_schedule(sched, confirmed=True)

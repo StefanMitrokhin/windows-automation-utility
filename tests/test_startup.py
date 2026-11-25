@@ -77,7 +77,9 @@ def test_disable_rolls_back(tmp_path: Path) -> None:
     registry.fail_delete.add(
         (Hive.HKCU, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", "OneDrive")
     )
-    with pytest.raises(Exception):
+    from deskkit.errors import DeskKitError
+
+    with pytest.raises(DeskKitError):
         svc.disable("hkcu_run|OneDrive", dry_run=False, confirmed=True)
     assert "OneDrive" not in registry.data.get(
         (Hive.HKCU, "Software\\StefanMitrokhin\\DeskKit\\DisabledStartup\\HKCU"),
@@ -85,7 +87,7 @@ def test_disable_rolls_back(tmp_path: Path) -> None:
     )
 
 
-def test_enable_restores(tmp_path: Path) -> None:
+def test_enable_restores(context, tmp_path: Path) -> None:
     svc, registry, _ = _service(tmp_path)
     disabled = "Software\\StefanMitrokhin\\DeskKit\\DisabledStartup\\HKCU"
     registry.data[(Hive.HKCU, disabled)] = {"OneDrive": RegValue("OneDrive", "x", RegKind.SZ)}
@@ -95,6 +97,14 @@ def test_enable_restores(tmp_path: Path) -> None:
         in registry.data[(Hive.HKCU, "Software\\Microsoft\\Windows\\CurrentVersion\\Run")]
     )
     assert "OneDrive" not in registry.data.get((Hive.HKCU, disabled), {})
+
+    from deskkit.models import StartupEntry, StartupSource
+    from deskkit.ui.presenters import StartupPresenter
+
+    sp = StartupPresenter(context)
+    entry = StartupEntry("hkcu_run|OneDrive", StartupSource.HKCU_RUN, "OneDrive", "x", True, False)
+    sp.confirmation(entry, "enable")
+    sp.elevate()
 
 
 def test_hklm_requires_admin(tmp_path: Path) -> None:
