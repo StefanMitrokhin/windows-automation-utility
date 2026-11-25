@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter
 
+from deskkit.cancel import CancellationToken
 from deskkit.models import SystemSnapshot
 from deskkit.ui.presenters import ReportPresenter
 from deskkit.ui.strings import BTN_COLLECT, BTN_SAVE_HTML, BTN_SAVE_XLSX
@@ -46,7 +47,7 @@ class ReportScreen(customtkinter.CTkFrame):
         self._xlsx.pack(side="left", padx=4)
 
     def _collect(self) -> None:
-        def task() -> SystemSnapshot:
+        def task(_cancel: CancellationToken) -> SystemSnapshot:
             return self._presenter.collect()
 
         self._host.run_task(

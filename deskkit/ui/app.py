@@ -52,7 +52,7 @@ class ScreenHost(Protocol):
 
     def run_task(
         self,
-        fn: Callable[[], object],
+        fn: Callable[[CancellationToken], object],
         on_ok: Callable[[object], None],
         on_err: Callable[[BaseException], None],
     ) -> None: ...
@@ -169,16 +169,20 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
     def stop_task(self) -> None:
         self._cancel.cancel()
         self._context.runner.terminate()
-        self._cancel = CancellationToken()
 
     def run_task(
         self,
-        fn: Callable[[], object],
+        fn: Callable[[CancellationToken], object],
         on_ok: Callable[[object], None],
         on_err: Callable[[BaseException], None],
     ) -> None:
         self._cancel = CancellationToken()
-        self._runner.run_task(fn, on_ok, on_err)
+        token = self._cancel
+
+        def worker() -> object:
+            return fn(token)
+
+        self._runner.run_task(worker, on_ok, on_err)
 
     def set_busy(self, busy: bool) -> None:
         self._busy = busy

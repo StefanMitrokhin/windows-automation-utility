@@ -125,3 +125,46 @@ def test_strings_nav_complete() -> None:
     expected = {"home", "install", "cleanup", "report", "startup", "backup", "profile", "logs"}
     assert set(NAV) == expected
     assert all(NAV.values())
+
+
+def test_run_task_stop_keeps_same_cancellation_token() -> None:
+    """Связка как в DeskKitApp: токен до потока, stop_task не подменяет экземпляр."""
+    import threading
+    import time
+
+    from deskkit.cancel import CancellationToken
+
+    gate = threading.Event()
+
+    class Coordinator:
+        def __init__(self) -> None:
+            self._cancel = CancellationToken()
+
+        def run_task(self, fn) -> None:
+            self._cancel = CancellationToken()
+            token = self._cancel
+
+            def worker() -> None:
+                gate.wait(2)
+                fn(token)
+
+            threading.Thread(target=worker, daemon=True).start()
+
+        def stop_task(self) -> None:
+            self._cancel.cancel()
+
+    coord = Coordinator()
+    seen: list[bool] = []
+
+    def work(cancel: CancellationToken) -> None:
+        seen.append(cancel.is_cancelled())
+
+    coord.run_task(work)
+    token_before_stop = coord._cancel
+    coord.stop_task()
+    assert coord._cancel is token_before_stop
+    gate.set()
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline and not seen:
+        time.sleep(0.001)
+    assert seen == [True]

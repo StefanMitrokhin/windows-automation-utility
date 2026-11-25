@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter
 
+from deskkit.cancel import CancellationToken
 from deskkit.errors import DeskKitError, ValidationError
 from deskkit.models import BackupResult, BackupSettings, ScheduleSettings, ScheduleStatus
 from deskkit.text import backup_preview_text, backup_result_text
@@ -225,14 +226,14 @@ class BackupScreen(customtkinter.CTkFrame):
             self._host.notify("Действие отменено.")
             return
 
-        def task() -> BackupResult:
+        def task(cancel: CancellationToken) -> BackupResult:
             return self._presenter.execute(
                 self._paths(),
                 self._dest_path(),
                 self._keep_last(),
                 dry_run=False,
                 confirmed=True,
-                cancel=self._host.cancel_token(),
+                cancel=cancel,
             )
 
         self._host.run_task(

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter
 
+from deskkit.cancel import CancellationToken
 from deskkit.errors import DeskKitError, ValidationError
 from deskkit.models import InstallReport, InstallStatus
 from deskkit.text import install_preview_text, install_report_text, profile_summary_text
@@ -113,11 +114,11 @@ class ProfileScreen(customtkinter.CTkFrame):
             self._host.notify("Действие отменено.")
             return
 
-        def task() -> InstallReport:
+        def task(cancel: CancellationToken) -> InstallReport:
             return self._presenter.apply_install(
                 dry_run=False,
                 confirmed=True,
-                cancel=self._host.cancel_token(),
+                cancel=cancel,
             )
 
         def done(report: InstallReport) -> None:

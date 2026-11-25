@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter
 
+from deskkit.cancel import CancellationToken
 from deskkit.models import InstallReport, InstallScope, InstallStatus
 from deskkit.text import install_preview_text, install_report_text
 from deskkit.ui.presenters import InstallPresenter, can_execute
@@ -134,13 +135,13 @@ class InstallScreen(customtkinter.CTkFrame):
             self._host.notify("Действие отменено.")
             return
 
-        def task() -> InstallReport:
+        def task(cancel: CancellationToken) -> InstallReport:
             return self._presenter.execute(
                 ids,
                 scope,
                 dry_run=False,
                 confirmed=True,
-                cancel=self._host.cancel_token(),
+                cancel=cancel,
             )
 
         def done(report: InstallReport) -> None:

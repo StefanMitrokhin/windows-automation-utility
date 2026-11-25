@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter
 
+from deskkit.cancel import CancellationToken
 from deskkit.errors import ValidationError
 from deskkit.models import CleanupResult, CleanupTargetId
 from deskkit.text import cleanup_preview_text, cleanup_result_text, cleanup_target_label
@@ -112,12 +113,12 @@ class CleanupScreen(customtkinter.CTkFrame):
             self._host.notify("Действие отменено.")
             return
 
-        def task() -> CleanupResult:
+        def task(cancel: CancellationToken) -> CleanupResult:
             return self._presenter.execute(
                 targets,
                 dry_run=False,
                 confirmed=True,
-                cancel=self._host.cancel_token(),
+                cancel=cancel,
             )
 
         self._host.run_task(
