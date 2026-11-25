@@ -13,7 +13,7 @@
 - Аннотации типов обязательны на всех функциях и методах пакета `deskkit/`. `Any` не использовать. Для свободного JSON-словаря тип `dict[str, object]`.
 - Запрещены `shell=True`, `os.system`, `eval`, `exec`, `pickle`, `subprocess` со строковой командой, сетевые библиотеки и любые запросы, кроме процесса `winget`, который запускает сам Windows.
 
-Продукт v1 собирается одним разработчиком как портфолио: настройка и обслуживание Windows для дома и небольшого офиса. Автор — Стефан Митрохин, GitHub `Stephanchik`. Репозиторий: `https://github.com/Stephanchik/windows-automation-utility`. Лицензия уже лежит в `LICENSE` (MIT, Copyright (c) 2026 Stephanchik) и не переписывается.
+Продукт v1 собирается одним разработчиком как портфолио: настройка и обслуживание Windows для дома и небольшого офиса. Автор и издатель — Stefan Mitrokhin, GitHub `StefanMitrokhin`. Репозиторий: `https://github.com/StefanMitrokhin/windows-automation-utility`. В `LICENSE` меняется только строка копирайта на `Copyright (c) 2026 Stefan Mitrokhin`. Остальной текст MIT не трогать.
 
 ---
 
@@ -88,7 +88,7 @@ DeskKit — локальная программа для Windows 10 64-bit и Wi
 
 ## 2. Точное дерево файлов
 
-После реализации в репозитории есть только эти пути сверх уже существующих `.gitignore`, `LICENSE` и заменённого `README.md`. Пустых `__init__.py` достаточно там, где ниже не задано иное содержимое.
+После реализации в репозитории есть только эти пути сверх уже существующих `.gitignore`, `LICENSE` и заменённого `README.md`. В `LICENSE` одна правка: владелец копирайта `Stefan Mitrokhin`. Пустых `__init__.py` достаточно там, где ниже не задано иное содержимое.
 
 ```text
 pyproject.toml
@@ -226,7 +226,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{ name = "Стефан Митрохин" }]
+authors = [{ name = "Stefan Mitrokhin" }]
 keywords = ["windows", "winget", "desktop", "automation"]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -257,8 +257,8 @@ dev = [
 deskkit = "deskkit.__main__:main"
 
 [project.urls]
-Homepage = "https://github.com/Stephanchik/windows-automation-utility"
-Issues = "https://github.com/Stephanchik/windows-automation-utility/issues"
+Homepage = "https://github.com/StefanMitrokhin/windows-automation-utility"
+Issues = "https://github.com/StefanMitrokhin/windows-automation-utility/issues"
 
 [tool.setuptools.packages.find]
 include = ["deskkit*"]
@@ -1239,8 +1239,8 @@ class WindowsPlatform:
 
 - Run пользователя: `Software\Microsoft\Windows\CurrentVersion\Run`
 - Run общий: `Software\Microsoft\Windows\CurrentVersion\Run`
-- запас выключенных HKCU: `Software\Stephanchik\DeskKit\DisabledStartup\HKCU`
-- запас выключенных HKLM: `Software\Stephanchik\DeskKit\DisabledStartup\HKLM`
+- запас выключенных HKCU: `Software\StefanMitrokhin\DeskKit\DisabledStartup\HKCU`
+- запас выключенных HKLM: `Software\StefanMitrokhin\DeskKit\DisabledStartup\HKLM`
 
 Ветку `WOW6432Node` для Run не читать и не писать.
 
@@ -1995,7 +1995,7 @@ class ScreenHost(Protocol):
 3. `Копии`. `Расписание включено` либо `Расписание выключено` по `schedule_exists and schedule_enabled`. Кнопка `К копиям`.
 4. `Права`. Строка статуса администратора и фраза `Для обычной работы права администратора не нужны.`
 
-Под карточками три строки `SAFETY_LINES`. Внизу подпись `Стефан Митрохин · GitHub Stephanchik · MIT · версия 0.1.0`.
+Под карточками три строки `SAFETY_LINES`. Внизу подпись `Stefan Mitrokhin · GitHub StefanMitrokhin · MIT · версия 0.1.0`.
 
 `refresh` перечитывает `HomePresenter.status`.
 
@@ -2234,7 +2234,7 @@ VSVersionInfo(
           StringStruct("FileDescription", "DeskKit"),
           StringStruct("FileVersion", "0.1.0"),
           StringStruct("InternalName", "DeskKit"),
-          StringStruct("LegalCopyright", "Copyright (c) 2026 Stephanchik"),
+          StringStruct("LegalCopyright", "Copyright (c) 2026 Stefan Mitrokhin"),
           StringStruct("OriginalFilename", "DeskKit.exe"),
           StringStruct("ProductName", "DeskKit"),
           StringStruct("ProductVersion", "0.1.0"),
@@ -2246,7 +2246,7 @@ VSVersionInfo(
 )
 ```
 
-В интерфейсе автор пишется как `Стефан Митрохин`. В ресурсе файла — латинская транслитерация, чтобы старые средства просмотра версии не портили строку.
+В интерфейсе, в ресурсе файла и у издателя установщика автор пишется одинаково: `Stefan Mitrokhin`. Логин GitHub в ссылках — `StefanMitrokhin`.
 
 ### 8.3. Спеки PyInstaller
 
@@ -2287,8 +2287,8 @@ dist/DeskKit-cli/DeskKit-cli.exe
 ```iss
 #define MyAppName "DeskKit"
 #define MyAppVersion "0.1.0"
-#define MyAppPublisher "Стефан Митрохин"
-#define MyAppURL "https://github.com/Stephanchik/windows-automation-utility"
+#define MyAppPublisher "Stefan Mitrokhin"
+#define MyAppURL "https://github.com/StefanMitrokhin/windows-automation-utility"
 #define MyAppExeName "DeskKit.exe"
 #define MyAppId "{{8F3C1A2E-6B47-4D91-9C5E-2A7F0B4D8E16}"
 
@@ -2849,7 +2849,7 @@ jobs:
 ```markdown
 # DeskKit
 
-DeskKit — программа для Windows 10 и Windows 11, которая помогает настроить новый компьютер и поддерживать его в порядке. Её делает Стефан Митрохин (GitHub: [Stephanchik](https://github.com/Stephanchik)) для дома и небольших офисов: поставить привычный набор программ, убрать временные файлы, посмотреть отчёт о компьютере, проверить автозагрузку и настроить копию документов.
+DeskKit — программа для Windows 10 и Windows 11, которая помогает настроить новый компьютер и поддерживать его в порядке. Её делает Stefan Mitrokhin (GitHub: [StefanMitrokhin](https://github.com/StefanMitrokhin)) для дома и небольших офисов: поставить привычный набор программ, убрать временные файлы, посмотреть отчёт о компьютере, проверить автозагрузку и настроить копию документов.
 
 Программа ставится обычным установщиком. Отдельно ставить Python не нужно.
 
@@ -2881,7 +2881,7 @@ DeskKit не чистит реестр, не обновляет драйверы
 
 ## Как установить
 
-1. Откройте [релизы](https://github.com/Stephanchik/windows-automation-utility/releases) и скачайте файл `DeskKit-Setup-0.1.0.exe`. Если вышла более новая версия, берите её и сверяйте имя файла с описанием релиза.
+1. Откройте [релизы](https://github.com/StefanMitrokhin/windows-automation-utility/releases) и скачайте файл `DeskKit-Setup-0.1.0.exe`. Если вышла более новая версия, берите её и сверяйте имя файла с описанием релиза.
 2. Сверьте контрольную сумму SHA-256 с суммой в описании релиза. В PowerShell:
 
 ```powershell
@@ -2938,7 +2938,7 @@ Get-FileHash .\DeskKit-Setup-0.1.0.exe -Algorithm SHA256
 
 ## Лицензия
 
-MIT. Copyright (c) 2026 Stephanchik.
+MIT. Copyright (c) 2026 Stefan Mitrokhin.
 
 Программа поставляется как есть, без гарантии. Перед очисткой и копированием проверьте предварительный список.
 ```
@@ -2965,7 +2965,7 @@ customtkinter
 Команда, которую реализация выполняет один раз из клона, если `gh` уже авторизован на этот репозиторий:
 
 ```text
-gh repo edit Stephanchik/windows-automation-utility --description "Утилита настройки и обслуживания Windows для дома и небольшого офиса: установка программ, очистка, отчёт, автозагрузка и резервные копии." --add-topic python --add-topic windows --add-topic winget --add-topic pyinstaller --add-topic inno-setup --add-topic desktop-app --add-topic automation --add-topic customtkinter
+gh repo edit StefanMitrokhin/windows-automation-utility --description "Утилита настройки и обслуживания Windows для дома и небольшого офиса: установка программ, очистка, отчёт, автозагрузка и резервные копии." --add-topic python --add-topic windows --add-topic winget --add-topic pyinstaller --add-topic inno-setup --add-topic desktop-app --add-topic automation --add-topic customtkinter
 ```
 
 Если `gh` отвечает отказом прав, описание и темы записать в конец PR и не повторять попытку. Сайт, вики и другие поля About не заполнять.
@@ -3064,9 +3064,9 @@ gh repo edit Stephanchik/windows-automation-utility --description "Утилит�
 
 ### Шаг 15. README и описание репозитория
 
-Файлы: `README.md`. Команда `gh repo edit` из раздела 12.
+Файлы: `README.md`, строка копирайта в `LICENSE`. Команда `gh repo edit` из раздела 12.
 
-Приёмка: README совпадает с разделом 12, в нём нет `![`, нет ссылок на png. Описание и темы выставлены либо перечислены в ответе, если `gh` отказал.
+Приёмка: README совпадает с разделом 12, в нём нет `![`, нет ссылок на png. В `LICENSE` строка копирайта ровно `Copyright (c) 2026 Stefan Mitrokhin`. Описание и темы выставлены либо перечислены в ответе, если `gh` отказал.
 
 ### Шаг 16. Сквозная автоматическая приёмка
 
