@@ -34,9 +34,8 @@ class ReportScreen(customtkinter.CTkFrame):
         self._output.pack(fill="both", expand=True, padx=12, pady=8)
         row = customtkinter.CTkFrame(self)
         row.pack(fill="x", padx=12, pady=8)
-        customtkinter.CTkButton(row, text=BTN_COLLECT, command=self._collect).pack(
-            side="left", padx=4
-        )
+        self._collect_btn = customtkinter.CTkButton(row, text=BTN_COLLECT, command=self._collect)
+        self._collect_btn.pack(side="left", padx=4)
         self._html = customtkinter.CTkButton(
             row, text=BTN_SAVE_HTML, state="disabled", command=self._save_html
         )
@@ -63,10 +62,12 @@ class ReportScreen(customtkinter.CTkFrame):
                 self._progress.start()
             else:
                 self._progress.set(0.5)
+            self._collect_btn.configure(state="disabled")
         else:
             if hasattr(self._progress, "stop"):
                 self._progress.stop()
             self._progress.pack_forget()
+            self._collect_btn.configure(state="normal")
 
     def _show(self, snapshot: SystemSnapshot) -> None:
         self._snapshot = snapshot

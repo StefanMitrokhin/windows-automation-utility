@@ -62,15 +62,18 @@ class TaskRunner:
         ] = queue.Queue()
         self._busy = False
 
+    def is_busy(self) -> bool:
+        return self._busy
+
     def run_task(
         self,
         fn: Callable[[], object],
         on_ok: Callable[[object], None],
         on_err: Callable[[BaseException], None],
-    ) -> None:
+    ) -> bool:
         if self._busy:
             self._host.notify("Дождитесь окончания операции.")  # type: ignore[attr-defined]
-            return
+            return False
         self._busy = True
         self._host.set_busy(True)  # type: ignore[attr-defined]
 
@@ -87,6 +90,7 @@ class TaskRunner:
             )
 
         threading.Thread(target=worker, daemon=True).start()
+        return True
 
     def _finish_ok(self, value: object, on_ok: Callable[[object], None]) -> None:
         self._busy = False

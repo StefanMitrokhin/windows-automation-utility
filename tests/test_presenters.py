@@ -128,43 +128,117 @@ def test_strings_nav_complete() -> None:
 
 
 def test_run_task_stop_keeps_same_cancellation_token() -> None:
-    """Связка как в DeskKitApp: токен до потока, stop_task не подменяет экземпляр."""
+    """TaskDispatch (как DeskKitApp.run_task): stop отменяет токен задачи."""
     import threading
     import time
 
     from deskkit.cancel import CancellationToken
+    from deskkit.ui.task_flow import TaskDispatch
 
     gate = threading.Event()
+    notified: list[str] = []
 
-    class Coordinator:
+    class FakeRunner:
         def __init__(self) -> None:
-            self._cancel = CancellationToken()
+            self._busy = False
 
-        def run_task(self, fn) -> None:
-            self._cancel = CancellationToken()
-            token = self._cancel
+        def is_busy(self) -> bool:
+            return self._busy
+
+        def run_task(self, fn, on_ok, on_err) -> bool:
+            if self._busy:
+                return False
+            self._busy = True
 
             def worker() -> None:
-                gate.wait(2)
-                fn(token)
+                try:
+                    value = fn()
+                except BaseException as exc:
+                    on_err(exc)
+                    return
+                on_ok(value)
 
             threading.Thread(target=worker, daemon=True).start()
+            return True
 
-        def stop_task(self) -> None:
-            self._cancel.cancel()
-
-    coord = Coordinator()
+    runner = FakeRunner()
+    dispatch = TaskDispatch()
     seen: list[bool] = []
 
     def work(cancel: CancellationToken) -> None:
+        gate.wait(2)
         seen.append(cancel.is_cancelled())
 
-    coord.run_task(work)
-    token_before_stop = coord._cancel
-    coord.stop_task()
-    assert coord._cancel is token_before_stop
+    dispatch.run_task(runner, notified.append, work, lambda _: None, lambda _: None)
+    token_before_stop = dispatch.cancel_token()
+    dispatch.stop_task(lambda: None)
+    assert dispatch.cancel_token() is token_before_stop
     gate.set()
     deadline = time.monotonic() + 2.0
     while time.monotonic() < deadline and not seen:
         time.sleep(0.001)
     assert seen == [True]
+
+
+def test_run_task_while_busy_does_not_replace_cancel_token() -> None:
+    """Повторный run_task при занятом runner не подменяет токен первой задачи."""
+    import threading
+
+    from deskkit.cancel import CancellationToken
+    from deskkit.ui.task_flow import BUSY_TASK_MESSAGE, TaskDispatch
+
+    gate = threading.Event()
+    notified: list[str] = []
+
+    class FakeRunner:
+        def __init__(self) -> None:
+            self._busy = False
+
+        def is_busy(self) -> bool:
+            return self._busy
+
+        def run_task(self, fn, on_ok, on_err) -> bool:
+            if self._busy:
+                return False
+            self._busy = True
+
+            def worker() -> None:
+                gate.wait(2)
+                try:
+                    value = fn()
+                except BaseException as exc:
+                    on_err(exc)
+                    return
+                on_ok(value)
+
+            threading.Thread(target=worker, daemon=True).start()
+            return True
+
+    runner = FakeRunner()
+    dispatch = TaskDispatch()
+    terminate_calls = 0
+
+    def work(cancel: CancellationToken) -> str:
+        gate.wait(2)
+        return "done" if not cancel.is_cancelled() else "stopped"
+
+    dispatch.run_task(runner, notified.append, work, lambda _: None, lambda _: None)
+    token_during_job = dispatch.cancel_token()
+    dispatch.run_task(
+        runner,
+        notified.append,
+        lambda _c: "second",
+        lambda _: None,
+        lambda _: None,
+    )
+    assert dispatch.cancel_token() is token_during_job
+    assert BUSY_TASK_MESSAGE in notified
+
+    def do_terminate() -> None:
+        nonlocal terminate_calls
+        terminate_calls += 1
+
+    dispatch.stop_task(do_terminate)
+    assert terminate_calls == 1
+    gate.set()
+    assert token_during_job.is_cancelled()

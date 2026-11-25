@@ -40,6 +40,7 @@ from deskkit.ui.strings import (
     NAV,
     VIEW_ONLY,
 )
+from deskkit.ui.task_flow import TaskDispatch
 from deskkit.ui.widgets import TaskRunner, confirm
 
 
@@ -84,7 +85,6 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
     def __init__(self, context: Context) -> None:
         super().__init__()
         self._context = context
-        self._cancel = CancellationToken()
         self._view_only = customtkinter.BooleanVar(value=False)
         self._busy = False
         self._current = "home"
@@ -129,6 +129,7 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
         self._hint = customtkinter.CTkLabel(self._status, text="")
         self._hint.pack(side="right", padx=12)
         self._runner = TaskRunner(self)
+        self._task_dispatch = TaskDispatch()
         self._screens = {
             "home": HomeScreen(self._content, HomePresenter(context), self),
             "install": InstallScreen(self._content, InstallPresenter(context), self),
@@ -164,11 +165,10 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
         return self._context.admin.is_admin()
 
     def cancel_token(self) -> CancellationToken:
-        return self._cancel
+        return self._task_dispatch.cancel_token()
 
     def stop_task(self) -> None:
-        self._cancel.cancel()
-        self._context.runner.terminate()
+        self._task_dispatch.stop_task(self._context.runner.terminate)
 
     def run_task(
         self,
@@ -176,13 +176,7 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
         on_ok: Callable[[object], None],
         on_err: Callable[[BaseException], None],
     ) -> None:
-        self._cancel = CancellationToken()
-        token = self._cancel
-
-        def worker() -> object:
-            return fn(token)
-
-        self._runner.run_task(worker, on_ok, on_err)
+        self._task_dispatch.run_task(self._runner, self.notify, fn, on_ok, on_err)
 
     def set_busy(self, busy: bool) -> None:
         self._busy = busy
@@ -230,8 +224,7 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
                 no_text=BTN_STAY,
                 yes_text=BTN_CLOSE_ANYWAY,
             ):
-                self._cancel.cancel()
-                self._context.runner.terminate()
+                self._task_dispatch.stop_task(self._context.runner.terminate)
                 self.destroy()
             return
         self.destroy()

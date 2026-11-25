@@ -132,10 +132,13 @@ class CleanupScreen(customtkinter.CTkFrame):
                 self._progress.start()
             else:
                 self._progress.set(0.5)
+            self._execute_btn.configure(state="disabled")
         else:
             if hasattr(self._progress, "stop"):
                 self._progress.stop()
             self._progress.pack_forget()
+            execute_state = "disabled" if self._host.view_only() else "normal"
+            self._execute_btn.configure(state=execute_state)
 
     def _set(self, text: str) -> None:
         self._output.configure(state="normal")

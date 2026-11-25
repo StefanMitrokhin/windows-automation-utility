@@ -129,6 +129,13 @@ class ProfileScreen(customtkinter.CTkFrame):
 
         self._host.run_task(task, done, self._host.notify)
 
+    def on_busy(self, busy: bool) -> None:
+        if busy:
+            self._apply_btn.configure(state="disabled")
+        else:
+            apply_state = "disabled" if self._host.view_only() else "normal"
+            self._apply_btn.configure(state=apply_state)
+
     def refresh(self) -> None:
         self._path.configure(state="normal")
         self._path.delete(0, "end")
