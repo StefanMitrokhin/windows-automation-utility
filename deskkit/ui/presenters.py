@@ -233,7 +233,10 @@ class ProfilePresenter:
     def parse_file(self, path: Path) -> Profile:
         import json
 
-        data = json.loads(path.read_text(encoding="utf-8"))
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise ValidationError("Файл профиля повреждён.") from exc
         return profile_from_mapping(data)
 
     def import_from(self, path: Path, *, confirmed: bool) -> Profile:

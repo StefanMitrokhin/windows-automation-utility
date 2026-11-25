@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter
 
+from deskkit.errors import ValidationError
 from deskkit.models import CleanupResult, CleanupTargetId
 from deskkit.text import cleanup_preview_text, cleanup_result_text, cleanup_target_label
 from deskkit.ui.presenters import CleanupPresenter, can_execute
@@ -33,6 +34,7 @@ class CleanupScreen(customtkinter.CTkFrame):
         super().__init__(parent)
         self._presenter = presenter
         self._host = host
+        self._targets_seeded = False
         self._vars: dict[CleanupTargetId, customtkinter.BooleanVar] = {}
         customtkinter.CTkLabel(self, text="Очистка", font=("Segoe UI", 20)).pack(
             anchor="w", padx=12, pady=(8, 0)
@@ -89,7 +91,11 @@ class CleanupScreen(customtkinter.CTkFrame):
         return tuple(target for target, var in self._vars.items() if var.get())
 
     def _preview(self) -> None:
-        preview = self._presenter.preview(self._targets())
+        try:
+            preview = self._presenter.preview(self._targets())
+        except ValidationError as exc:
+            self._host.notify(str(exc))
+            return
         self._set(cleanup_preview_text(preview, include_footer=False))
 
     def _execute(self) -> None:
@@ -97,14 +103,22 @@ class CleanupScreen(customtkinter.CTkFrame):
             self._host.notify("Включён режим просмотра.")
             return
         targets = self._targets()
-        preview = self._presenter.preview(targets)
+        try:
+            preview = self._presenter.preview(targets)
+        except ValidationError as exc:
+            self._host.notify(str(exc))
+            return
         if not self._host.ask(CONFIRM_TITLE, self._presenter.confirmation(preview)):
             self._host.notify("Действие отменено.")
             return
-        cancel = self._host.cancel_token()
 
         def task() -> CleanupResult:
-            return self._presenter.execute(targets, dry_run=False, confirmed=True, cancel=cancel)
+            return self._presenter.execute(
+                targets,
+                dry_run=False,
+                confirmed=True,
+                cancel=self._host.cancel_token(),
+            )
 
         self._host.run_task(
             task, lambda result: self._set(cleanup_result_text(result)), self._host.notify
@@ -129,8 +143,10 @@ class CleanupScreen(customtkinter.CTkFrame):
         self._output.configure(state="disabled")
 
     def refresh(self) -> None:
-        profile = self._presenter._context.profile_store.load()
-        for target, var in self._vars.items():
-            var.set(target in profile.cleanup.targets)
+        if not self._targets_seeded:
+            profile = self._presenter._context.profile_store.load()
+            for target, var in self._vars.items():
+                var.set(target in profile.cleanup.targets)
+            self._targets_seeded = True
         execute_state = "disabled" if self._host.view_only() else "normal"
         self._execute_btn.configure(state=execute_state)

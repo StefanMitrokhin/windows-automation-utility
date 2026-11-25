@@ -112,10 +112,13 @@ class ProfileScreen(customtkinter.CTkFrame):
         if not self._host.ask(CONFIRM_TITLE, confirm_body):
             self._host.notify("Действие отменено.")
             return
-        cancel = self._host.cancel_token()
 
         def task() -> InstallReport:
-            return self._presenter.apply_install(dry_run=False, confirmed=True, cancel=cancel)
+            return self._presenter.apply_install(
+                dry_run=False,
+                confirmed=True,
+                cancel=self._host.cancel_token(),
+            )
 
         def done(report: InstallReport) -> None:
             text = install_report_text(report)

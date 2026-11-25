@@ -109,6 +109,10 @@ def test_profile_init_refuses_second(context, tmp_path) -> None:
         encoding="utf-8",
     )
     assert presenter.parse_file(import_file)
+    corrupt = tmp_path / "corrupt.json"
+    corrupt.write_text("{not json", encoding="utf-8")
+    with pytest.raises(ValidationError, match="повреждён"):
+        presenter.parse_file(corrupt)
     with pytest.raises(ConfirmationRequired):
         presenter.import_from(import_file, confirmed=False)
     presenter.import_from(import_file, confirmed=True)

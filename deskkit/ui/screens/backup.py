@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import customtkinter
 
 from deskkit.errors import DeskKitError, ValidationError
-from deskkit.models import BackupResult, BackupSettings, ScheduleSettings
+from deskkit.models import BackupResult, BackupSettings, ScheduleSettings, ScheduleStatus
 from deskkit.text import backup_preview_text, backup_result_text
 from deskkit.ui.presenters import BackupPresenter, can_execute
 from deskkit.ui.strings import (
@@ -44,6 +44,7 @@ class BackupScreen(customtkinter.CTkFrame):
         self._presenter = presenter
         self._host = host
         self._sources: list[str] = []
+        self._schedule_status_loaded = False
         self._selected_source: customtkinter.StringVar = customtkinter.StringVar(value="")
         customtkinter.CTkLabel(self, text="Копии", font=("Segoe UI", 20)).pack(
             anchor="w", padx=12, pady=(8, 0)
@@ -223,7 +224,6 @@ class BackupScreen(customtkinter.CTkFrame):
         if not self._host.ask(CONFIRM_TITLE, self._presenter.confirmation(preview)):
             self._host.notify("Действие отменено.")
             return
-        cancel = self._host.cancel_token()
 
         def task() -> BackupResult:
             return self._presenter.execute(
@@ -232,7 +232,7 @@ class BackupScreen(customtkinter.CTkFrame):
                 self._keep_last(),
                 dry_run=False,
                 confirmed=True,
-                cancel=cancel,
+                cancel=self._host.cancel_token(),
             )
 
         self._host.run_task(
@@ -258,9 +258,7 @@ class BackupScreen(customtkinter.CTkFrame):
         self._write_profile()
         try:
             status = self._presenter.save_schedule(settings, confirmed=True)
-            if status.warning:
-                self._host.notify(status.warning)
-            self._status.configure(text=status.warning or status.task_name or "")
+            self._apply_schedule_status(status)
         except DeskKitError as exc:
             self._host.notify(str(exc))
 
@@ -274,7 +272,21 @@ class BackupScreen(customtkinter.CTkFrame):
         backup = replace(profile.backup, schedule=schedule)
         store.save(replace(profile, backup=backup))
         self._sched_enabled.set(False)
-        self.refresh()
+        self._update_schedule_status()
+
+    def _apply_schedule_status(self, status: ScheduleStatus) -> None:
+        extra = status.warning or ""
+        if status.exists and status.task_name:
+            extra = (extra + " " + status.task_name).strip()
+        self._status.configure(text=extra)
+        if status.warning:
+            self._host.notify(status.warning)
+
+    def _update_schedule_status(self) -> None:
+        try:
+            self._apply_schedule_status(self._presenter.schedule_status())
+        except DeskKitError as exc:
+            self._host.notify(str(exc))
 
     def on_busy(self, busy: bool) -> None:
         if busy:
@@ -314,12 +326,8 @@ class BackupScreen(customtkinter.CTkFrame):
         self._time.delete(0, "end")
         self._time.insert(0, backup.schedule.time)
         self._sync_weekday_visibility()
-        status = self._presenter.schedule_status()
-        extra = status.warning or ""
-        if status.exists and status.task_name:
-            extra = (extra + " " + status.task_name).strip()
-        self._status.configure(text=extra)
-        if status.warning:
-            self._host.notify(status.warning)
+        if not self._schedule_status_loaded:
+            self._update_schedule_status()
+            self._schedule_status_loaded = True
         execute_state = "disabled" if self._host.view_only() else "normal"
         self._run_btn.configure(state=execute_state)

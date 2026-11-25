@@ -133,10 +133,15 @@ class InstallScreen(customtkinter.CTkFrame):
         if not self._host.ask(CONFIRM_TITLE, self._presenter.confirmation(preview)):
             self._host.notify("Действие отменено.")
             return
-        cancel = self._host.cancel_token()
 
         def task() -> InstallReport:
-            return self._presenter.execute(ids, scope, dry_run=False, confirmed=True, cancel=cancel)
+            return self._presenter.execute(
+                ids,
+                scope,
+                dry_run=False,
+                confirmed=True,
+                cancel=self._host.cancel_token(),
+            )
 
         def done(report: InstallReport) -> None:
             self._set_output(install_report_text(report))
