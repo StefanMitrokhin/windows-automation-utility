@@ -21,6 +21,9 @@ class LogsScreen(customtkinter.CTkFrame):
         super().__init__(parent)
         self._presenter = presenter
         self._host = host
+        customtkinter.CTkLabel(self, text="Журнал", font=("Segoe UI", 20)).pack(
+            anchor="w", padx=12, pady=(8, 0)
+        )
         self._text = customtkinter.CTkTextbox(self)
         self._text.pack(fill="both", expand=True, padx=12, pady=8)
         row = customtkinter.CTkFrame(self)
