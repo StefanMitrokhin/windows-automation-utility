@@ -1,0 +1,28 @@
+from __future__ import annotations
+
+import customtkinter
+
+from deskkit.ui.strings import BTN_OPEN_LOG_DIR, BTN_REFRESH
+
+
+class LogsScreen(customtkinter.CTkFrame):
+    def __init__(self, parent, presenter, host) -> None:
+        super().__init__(parent)
+        self._presenter = presenter
+        self._host = host
+        self._text = customtkinter.CTkTextbox(self)
+        self._text.pack(fill="both", expand=True, padx=12, pady=8)
+        row = customtkinter.CTkFrame(self)
+        row.pack(fill="x", padx=12, pady=8)
+        customtkinter.CTkButton(row, text=BTN_REFRESH, command=self.refresh).pack(
+            side="left", padx=4
+        )
+        customtkinter.CTkButton(
+            row,
+            text=BTN_OPEN_LOG_DIR,
+            command=lambda: self._host.open_folder(self._presenter.directory()),
+        ).pack(side="left", padx=4)
+
+    def refresh(self) -> None:
+        self._text.delete("1.0", "end")
+        self._text.insert("1.0", self._presenter.text())

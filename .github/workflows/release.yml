@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: write
+
+jobs:
+  installer:
+    name: Build installer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Test
+        run: pytest
+      - name: Version matches tag
+        shell: pwsh
+        run: |
+          $version = python -c "import deskkit; print(deskkit.__version__)"
+          if ("v$version" -ne "${{ github.ref_name }}") {
+            Write-Error "Tag ${{ github.ref_name }} does not match $version"
+            exit 1
+          }
+      - name: PyInstaller
+        run: |
+          pyinstaller installer/deskkit-gui.spec --noconfirm --distpath dist --workpath build/gui
+          pyinstaller installer/deskkit-cli.spec --noconfirm --distpath dist --workpath build/cli
+      - name: Install Inno Setup 7.1.1
+        shell: pwsh
+        run: |
+          $url = "https://github.com/jrsoftware/issrc/releases/download/is-7_1_1/innosetup-7.1.1-x64.exe"
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\innosetup.exe"
+          Start-Process -FilePath "$env:RUNNER_TEMP\innosetup.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/SP-" -Wait
+          if (-not (Test-Path "C:\Program Files\Inno Setup 7\ISCC.exe")) {
+            Write-Error "ISCC.exe not found"
+            exit 1
+          }
+      - name: Compile installer
+        run: '& "C:\Program Files\Inno Setup 7\ISCC.exe" installer\installer.iss'
+      - name: Hash
+        shell: pwsh
+        run: |
+          $file = Get-ChildItem dist\DeskKit-Setup-*.exe | Select-Object -First 1
+          $hash = (Get-FileHash $file.FullName -Algorithm SHA256).Hash
+          @"
+          Установщик DeskKit ${{ github.ref_name }}
+
+          Файл: $($file.Name)
+          SHA256: $hash
+
+          Сверьте сумму перед запуском. Установщик не подписан цифровой подписью, поэтому Windows SmartScreen может показать предупреждение.
+          "@ | Set-Content -Encoding utf8 dist\release-body.md
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: DeskKit-Setup
+          path: dist/DeskKit-Setup-*.exe
+          if-no-files-found: error
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/DeskKit-Setup-*.exe
+          body_path: dist/release-body.md
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}

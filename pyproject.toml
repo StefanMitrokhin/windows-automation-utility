@@ -1,0 +1,100 @@
+[build-system]
+requires = ["setuptools==84.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deskkit"
+version = "0.1.0"
+description = "Настройка и обслуживание Windows для дома и небольшого офиса"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Stefan Mitrokhin" }]
+keywords = ["windows", "winget", "desktop", "automation"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Win32 (MS Windows)",
+  "Operating System :: Microsoft :: Windows :: Windows 10",
+  "Operating System :: Microsoft :: Windows :: Windows 11",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: System :: Systems Administration",
+]
+dependencies = [
+  "customtkinter==6.0.0",
+  "psutil==7.2.2",
+  "openpyxl==3.1.5",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==9.2.0",
+  "pytest-cov==7.1.0",
+  "ruff==0.17.6",
+  "pyinstaller==6.22.3",
+  "pillow==13.0.0",
+]
+
+[project.scripts]
+deskkit = "deskkit.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/StefanMitrokhin/windows-automation-utility"
+Issues = "https://github.com/StefanMitrokhin/windows-automation-utility/issues"
+
+[tool.setuptools.packages.find]
+include = ["deskkit*"]
+
+[tool.setuptools.package-data]
+deskkit = ["assets/*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = [
+  "installer/deskkit-gui.spec",
+  "installer/deskkit-cli.spec",
+  "build",
+  "dist",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "RUF"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "E501", "F401", "SIM", "RUF059", "RUF001", "B017", "F841"]
+"deskkit/**" = ["RUF001", "ANN", "E501"]
+"deskkit/text.py" = ["RUF001", "ANN", "E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["deskkit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers --cov=deskkit --cov-report=term-missing --cov-fail-under=90"
+
+[tool.coverage.run]
+branch = true
+source = ["deskkit"]
+omit = [
+  "deskkit/app_context.py",
+  "deskkit/__main__.py",
+  "deskkit/platform/protocols.py",
+  "deskkit/ui/app.py",
+  "deskkit/ui/widgets.py",
+  "deskkit/ui/theme.py",
+  "deskkit/ui/screens/*",
+  "deskkit/ui/presenters.py",
+  "deskkit/entry_gui.py",
+  "deskkit/entry_cli.py",
+  "deskkit/platform/windows.py",
+  "deskkit/platform/system_probe.py",
+  "deskkit/services/schedule.py",
+]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+exclude_lines = ["if __name__ == .__main__.:"]
