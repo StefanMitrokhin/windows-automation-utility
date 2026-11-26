@@ -157,23 +157,24 @@ def test_cancel_before_second_file(context, tmp_path: Path) -> None:
     os.utime(temp / "a.bin", (0, 0))
     os.utime(temp / "b.bin", (0, 0))
     token = CancellationToken()
-
-    def on_delete():
-        token.cancel()
-
-    # delete happens in apply loop - cancel after first file via patched delete
+    delete_calls = 0
     original = context.cleanup._files.delete_file
 
     def wrapped(path):
-        on_delete()
+        nonlocal delete_calls
+        delete_calls += 1
         original(path)
+        if delete_calls == 1:
+            token.cancel()
 
     context.cleanup._files.delete_file = wrapped  # type: ignore[method-assign]
     result = context.cleanup.apply(  # type: ignore[attr-defined]
         [CleanupTargetId.USER_TEMP], dry_run=False, confirmed=True, cancel=token
     )
     assert result.cancelled
-    assert not (temp / "b.bin").exists()
+    assert result.deleted_files == 1
+    assert delete_calls == 1
+    assert (temp / "a.bin").exists() != (temp / "b.bin").exists()
 
 
 def test_recycle_only_when_selected(context, tmp_path: Path) -> None:
