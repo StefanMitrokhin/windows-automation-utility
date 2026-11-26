@@ -22,8 +22,9 @@ def test_reject_relative() -> None:
 
 def test_drive_root() -> None:
     assert is_drive_root(Path("C:\\"))
-    if sys.platform != "win32":
-        assert is_drive_root(Path("/"))
+    assert is_drive_root(Path("/"))
+    if sys.platform == "win32":
+        assert is_drive_root(Path("\\"))
     assert not is_drive_root(Path(r"C:\Users"))
 
 

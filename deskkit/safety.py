@@ -30,7 +30,12 @@ def is_drive_root(path: Path) -> bool:
     if path.is_absolute() and path == Path(path.anchor):
         return True
     text = str(path)
-    return len(text) == 3 and text[1] == ":" and text[2] in ("/", "\\")
+    if len(text) == 3 and text[1] == ":" and text[2] in ("/", "\\"):
+        return True
+    # On Windows, "/" and "\\" are the current-drive root but may not be absolute in pathlib.
+    if sys.platform == "win32" and text in ("/", "\\"):
+        return True
+    return False
 
 
 def is_denied_source(path: Path) -> bool:
