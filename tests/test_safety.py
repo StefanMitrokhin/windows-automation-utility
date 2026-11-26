@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -22,6 +23,8 @@ def test_reject_relative() -> None:
 def test_drive_root() -> None:
     assert is_drive_root(Path("C:\\"))
     assert is_drive_root(Path("/"))
+    if sys.platform == "win32":
+        assert is_drive_root(Path("\\"))
     assert not is_drive_root(Path(r"C:\Users"))
 
 
