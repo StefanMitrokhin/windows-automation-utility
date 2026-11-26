@@ -15,7 +15,6 @@ keywords = ["windows", "winget", "desktop", "automation"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Win32 (MS Windows)",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: Microsoft :: Windows :: Windows 10",
   "Operating System :: Microsoft :: Windows :: Windows 11",
   "Programming Language :: Python :: 3.11",
