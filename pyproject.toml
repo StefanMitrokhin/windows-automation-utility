@@ -71,6 +71,7 @@ ignore = ["RUF001"]
 known-first-party = ["deskkit"]
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 testpaths = ["tests"]
 addopts = "-q --strict-markers --cov=deskkit --cov-report=term-missing --cov-fail-under=90"
 
