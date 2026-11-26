@@ -136,6 +136,35 @@ def test_launch_control_state_table() -> None:
     assert launch_control_state(view_only=True, busy=True) == "disabled"
 
 
+def test_progress_indicator_only_on_current_screen() -> None:
+    from deskkit.ui.screen_state import BusyUiSession, progress_indicator_visible
+
+    assert progress_indicator_visible(app_busy=True, is_current_screen=True) is True
+    assert progress_indicator_visible(app_busy=True, is_current_screen=False) is False
+    assert progress_indicator_visible(app_busy=False, is_current_screen=True) is False
+
+    ui = BusyUiSession(("install", "cleanup", "report"), current="install")
+    ui.start_operation()
+    assert ui.progress == {"install": True, "cleanup": False, "report": False}
+    ui.show("cleanup")
+    assert ui.progress == {"install": False, "cleanup": True, "report": False}
+    assert ui.launch_state() == "disabled"
+    ui.end_operation()
+    assert all(not visible for visible in ui.progress.values())
+    assert ui.launch_state() == "normal"
+
+
+def test_busy_operation_switch_screen_clears_stale_progress() -> None:
+    from deskkit.ui.screen_state import BusyUiSession
+
+    ui = BusyUiSession(("install", "backup"), current="install")
+    ui.start_operation()
+    ui.show("backup")
+    ui.show("install")
+    ui.end_operation()
+    assert ui.progress == {"install": False, "backup": False}
+
+
 def test_launch_control_busy_survives_show_and_view_only_toggle() -> None:
     from deskkit.ui.screen_state import LaunchControlSession
 

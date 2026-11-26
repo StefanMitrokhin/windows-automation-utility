@@ -22,6 +22,7 @@ from deskkit.ui.presenters import (
     ReportPresenter,
     StartupPresenter,
 )
+from deskkit.ui.screen_state import progress_indicator_visible
 from deskkit.ui.screens.backup import BackupScreen
 from deskkit.ui.screens.cleanup import CleanupScreen
 from deskkit.ui.screens.home import HomeScreen
@@ -156,6 +157,7 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
             button.configure(fg_color="#1f6aa5" if key == screen_id else None)
         self._screens[screen_id].tkraise()
         self._screens[screen_id].refresh()
+        self._sync_busy_progress_indicators()
 
     def current_screen_id(self) -> str:
         return self._current
@@ -183,11 +185,18 @@ class DeskKitApp(customtkinter.CTk, ScreenHost):
     ) -> None:
         self._task_dispatch.run_task(self._runner, self.notify, fn, on_ok, on_err)
 
+    def _sync_busy_progress_indicators(self) -> None:
+        for screen_id, screen in self._screens.items():
+            if hasattr(screen, "sync_busy_progress"):
+                show = progress_indicator_visible(
+                    app_busy=self._busy,
+                    is_current_screen=screen_id == self._current,
+                )
+                screen.sync_busy_progress(show)
+
     def set_busy(self, busy: bool) -> None:
         self._busy = busy
-        current = self._screens.get(self._current)
-        if current is not None and hasattr(current, "on_busy"):
-            current.on_busy(busy)
+        self._sync_busy_progress_indicators()
         for screen in self._screens.values():
             if hasattr(screen, "sync_launch_control"):
                 screen.sync_launch_control()

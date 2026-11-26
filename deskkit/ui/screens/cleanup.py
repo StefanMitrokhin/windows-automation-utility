@@ -126,8 +126,8 @@ class CleanupScreen(customtkinter.CTkFrame):
             task, lambda result: self._set(cleanup_result_text(result)), self._host.notify
         )
 
-    def on_busy(self, busy: bool) -> None:
-        if busy:
+    def sync_busy_progress(self, show_progress: bool) -> None:
+        if show_progress:
             self._progress.pack(fill="x", padx=12, pady=4, before=self._output)
             if hasattr(self._progress, "start"):
                 self._progress.start()
